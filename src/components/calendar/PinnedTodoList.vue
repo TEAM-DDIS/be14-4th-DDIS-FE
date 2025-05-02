@@ -49,11 +49,11 @@
               </div>
             </div>
             <div
-            class="drag-handle"
-          @mousedown.stop 
-        >
-      ≡
-    </div>
+              class="drag-handle"
+              @mousedown.stop
+            >
+              ≡
+            </div>
           </div>
         </div>
       </template>
@@ -79,7 +79,6 @@ watch(
   },
   { immediate: true, deep: true }
 )
-
 
 const swipedIndex = ref(null)
 const startX = ref({})

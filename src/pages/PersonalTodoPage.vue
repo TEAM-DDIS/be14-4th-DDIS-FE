@@ -13,11 +13,11 @@
             팔로잉 <b>{{ followingCount }}</b>
           </span>
         </div>
-        <button class="follow-btn">팔로우</button>
+        <button class="follow-btn" @click="toggleFollow">팔로우</button>
       </div>
 
       <div class="today-comment">
-        <h3 class="pinned-title">ACHIEVEMENT </h3>
+        <h3 class="pinned-title">ACHIEVEMENT</h3>
         <TodoCompletionChart :done-count="doneCount" :total-count="allTodos.length" />
       </div>
     </div>
@@ -29,7 +29,6 @@
           <button class="settings-btn">설정</button>
           <div v-if="showSettingsDropdown" class="dropdown-menu">
             <div class="dropdown-item" @click="openCategoryModal">카테고리 설정</div>
-            <!-- <div class="dropdown-item">캘린더 설정</div> -->
           </div>
         </div>
       </div>
@@ -71,130 +70,137 @@
       />
     </div>
   </div>
+
+  <!-- Modals -->
   <CategorySettingModal
     v-if="showCategoryModal"
     @close="showCategoryModal = false"
     @refresh="handleCategoryRefresh"
   />
-
   <Follower v-if="showFollowerModal" @close="showFollowerModal = false" />
   <Following v-if="showFollowingModal" @close="showFollowingModal = false" />
-
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
-import axios from '@/utils/axios'
-import Calendar from '@/components/calendar/PersonalCalendar.vue'
-import TodoList from '@/components/calendar/TodoList.vue'
-import PinnedTodoList from '@/components/calendar/PinnedTodoList.vue'
-import TodoAddModal from '@/components/calendar/TodoAddModal.vue'
-import TodoCompletionChart from '@/components/calendar/TodoCompletionChart.vue'
-import CategorySettingModal from '@/components/calendar/CategorySettingModal.vue'
-import Follower from '@/components/follow/Follower.vue'
-import Following from '@/components/follow/Following.vue'
+import { ref, onMounted, computed, watch } from 'vue';
+import axios from '@/utils/axios';
+import Calendar from '@/components/calendar/PersonalCalendar.vue';
+import TodoList from '@/components/calendar/TodoList.vue';
+import PinnedTodoList from '@/components/calendar/PinnedTodoList.vue';
+import TodoAddModal from '@/components/calendar/TodoAddModal.vue';
+import TodoCompletionChart from '@/components/calendar/TodoCompletionChart.vue';
+import CategorySettingModal from '@/components/calendar/CategorySettingModal.vue';
+import Follower from '@/components/follow/Follower.vue';
+import Following from '@/components/follow/Following.vue';
 
-const showFollowerModal = ref(false)
-const showFollowingModal = ref(false)
+const showFollowerModal = ref(false);
+const showFollowingModal = ref(false);
 
-const followerCount = ref(0)
-const followingCount = ref(0)
+const followerCount = ref(0);
+const followingCount = ref(0);
 
-const API_BASE = 'http://localhost:8080'
-const clientNum = 6
+const API_BASE = 'http://localhost:8080';
+const clientNum = 6;
 
-const dayCompletionRate = ref({})
-const todoExistsDates = ref({})
-const selectedDate = ref(getToday())
-const allTodos = ref([])
-const todosForDate = ref([])
-const pinnedTodos = ref([])
-const showAddModal = ref(false)
-const showSettingsDropdown = ref(false)
-const showCategoryModal = ref(false)
-const doneCount = computed(() => allTodos.value.filter(t => t.isDone).length)
+const token = localStorage.getItem('accessToken');
+const payload = JSON.parse(atob(token.split('.')[1]));
+const clientId = payload.clientNum;
+const dayCompletionRate = ref({});
+const todoExistsDates = ref({});
+const selectedDate = ref(getToday());
+const allTodos = ref([]);
+const todosForDate = ref([]);
+const pinnedTodos = ref([]);
+const showAddModal = ref(false);
+const showSettingsDropdown = ref(false);
+const showCategoryModal = ref(false);
+
+const doneCount = computed(() => allTodos.value.filter(t => t.isDone).length);
 
 function pad(n) {
-  return n.toString().padStart(2, '0')
+  return n.toString().padStart(2, '0');
 }
+
 function formatLocalDate(dateInput) {
-  const d = new Date(dateInput)
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const d = new Date(dateInput);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+
 function getToday() {
-  return formatLocalDate(new Date())
+  return formatLocalDate(new Date());
 }
 
 onMounted(() => {
-  fetchAllTodos()
-  fetchFollowCounts()
-})
+  fetchAllTodos();
+  fetchFollowCounts();
+});
 
-watch(selectedDate, date => loadTodosForDate(date))
+watch(selectedDate, (date) => loadTodosForDate(date));
 
 function toggleSettingsDropdown() {
-  showSettingsDropdown.value = !showSettingsDropdown.value
+  showSettingsDropdown.value = !showSettingsDropdown.value;
 }
+
 function openCategoryModal() {
-  showCategoryModal.value = true
-  showSettingsDropdown.value = false
+  showCategoryModal.value = true;
+  showSettingsDropdown.value = false;
 }
+
 function handleCategoryRefresh() {
-  fetchAllTodos()
+  fetchAllTodos();
 }
 
 async function fetchFollowCounts() {
   try {
-    const token = localStorage.getItem('accessToken')
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    const clientId = payload.sub
 
     const resFollowers = await fetch(`http://localhost:8080/follows/${clientId}/followers`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    const followers = await resFollowers.json()
-    followerCount.value = followers.length
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const followers = await resFollowers.json();
+    followerCount.value = followers.length;
 
     const resFollowings = await fetch(`http://localhost:8080/follows/${clientId}/followings`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    const followings = await resFollowings.json()
-    followingCount.value = followings.length
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const followings = await resFollowings.json();
+    followingCount.value = followings.length;
   } catch (e) {
-    console.error('[❌ 팔로우 수 로딩 실패]', e)
+    console.error('[❌ 팔로우 수 로딩 실패]', e);
   }
 }
 
 async function fetchAllTodos() {
   try {
-    const allRes = await axios.get(`${API_BASE}/personal-todos/${clientNum}`)
+
+    const allRes = await axios.get(`${API_BASE}/personal-todos/${clientId}`);
+    console.log('Received Todos:', allRes.data);
     allTodos.value = allRes.data.map(item => ({
       ...item,
-      todoDate: formatLocalDate(item.todoDate)
-    }))
-    updateCalendarState()
-    await loadTodosForDate(selectedDate.value)
-    await loadPinnedTodos()
+      todoDate: formatLocalDate(item.todoDate),
+    }));
+    updateCalendarState();
+    await loadTodosForDate(selectedDate.value);
+    await loadPinnedTodos();
   } catch (e) {
-    console.error('[❌ 전체 투두 로딩 실패]', e)
+    console.error('[❌ 전체 투두 로딩 실패]', e);
   }
 }
 
 async function loadTodosForDate(date) {
   const { data: mappings } = await axios.get(
-    `${API_BASE}/personal-todos/${clientNum}/date`,
+    `${API_BASE}/personal-todos/${clientId}/date`,
     { params: { todoDate: date } }
-  )
+  );
 
   const todosMap = Object.fromEntries(
     allTodos.value.map(t => [String(t.todoNum), t])
-  )
+  );
 
   todosForDate.value = mappings.filter(m => {
-    const base = todosMap[String(m.todoNum)]
-    return base?.todoContent || m.todoContent
+    const base = todosMap[String(m.todoNum)];
+    return base?.todoContent || m.todoContent;
   }).map(m => {
-    const base = todosMap[String(m.todoNum)] || {}
+    const base = todosMap[String(m.todoNum)] || {};
     return {
       todoNum: m.todoNum,
       todoDate: formatLocalDate(m.todoDate),
@@ -204,132 +210,147 @@ async function loadTodosForDate(date) {
       isPublic: m.isPublic,
       pinOrder: m.pinOrder,
       categoryName: base?.personalCategoryName ?? m.personalCategoryName ?? '',
-      categoryColor: base?.personalCategoryColorRgb ?? m.personalCategoryColorRgb ?? '#ccc'
-    }
-  })
+      categoryColor: base?.personalCategoryColorRgb ?? m.personalCategoryColorRgb ?? '#ccc',
+    };
+  });
 }
 
 function updateCalendarState() {
-  const rate = {}, exist = {}
+  const rate = {}, exist = {};
   allTodos.value.forEach(item => {
-    exist[item.todoDate] = true
-    rate[item.todoDate] = rate[item.todoDate] || { total: 0, done: 0 }
-    rate[item.todoDate].total++
-    if (item.isDone) rate[item.todoDate].done++
-  })
+    exist[item.todoDate] = true;
+    rate[item.todoDate] = rate[item.todoDate] || { total: 0, done: 0 };
+    rate[item.todoDate].total++;
+    if (item.isDone) rate[item.todoDate].done++;
+  });
   Object.entries(rate).forEach(([d, { total, done }]) => {
-    rate[d] = done / total
-  })
-  dayCompletionRate.value = rate
-  todoExistsDates.value = exist
+    rate[d] = done / total;
+  });
+  dayCompletionRate.value = rate;
+  todoExistsDates.value = exist;
 }
 
-function handleSelectDate(date) { selectedDate.value = date }
-function openAddModal() { showAddModal.value = true }
-function closeAddModal() { showAddModal.value = false }
+function handleSelectDate(date) {
+  selectedDate.value = date;
+}
+
+function openAddModal() {
+  showAddModal.value = true;
+}
+
+function closeAddModal() {
+  showAddModal.value = false;
+}
 
 async function handleAddTodo(payload) {
   try {
     await axios.post(`${API_BASE}/personal-todos`, payload, {
-      params: { clientNum }
-    })
-    await fetchAllTodos()
+      params: { clientNum },
+    });
+    await fetchAllTodos();
   } catch (e) {
-    console.error('[❌ handleAddTodo 에러]', e)
+    console.error('[❌ handleAddTodo 에러]', e);
   } finally {
-    closeAddModal()
+    closeAddModal();
   }
 }
 
 async function handleToggleDone({ todoNum, todoDate, isDone }) {
   try {
-    await axios.patch(`${API_BASE}/personal-todos`,
+    await axios.patch(
+      `${API_BASE}/personal-todos`,
       { todoNum, existingTodoDate: todoDate, isDone },
       { params: { clientNum } }
-    )
-    await fetchAllTodos()
+    );
+    await fetchAllTodos();
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }
 
 async function handleTogglePublic({ todoNum, todoDate, isPublic }) {
   try {
-    await axios.patch(`${API_BASE}/personal-todos`,
+    await axios.patch(
+      `${API_BASE}/personal-todos`,
       { todoNum, existingTodoDate: todoDate, isPublic },
       { params: { clientNum } }
-    )
-    await fetchAllTodos()
+    );
+    await fetchAllTodos();
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }
 
 async function handleDeleteTodo({ todoNum, todoDate }) {
   try {
     await axios.delete(`${API_BASE}/personal-todos/date`, {
-      params: { clientNum, todoNum, todoDate }
-    })
-    await fetchAllTodos()
+      params: { clientNum, todoNum, todoDate },
+    });
+    await fetchAllTodos();
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }
 
 async function handleUpdatePinOrder(newOrder) {
-  if (!Array.isArray(newOrder)) return
+  if (!Array.isArray(newOrder)) return;
   try {
     for (let i = 0; i < newOrder.length; i++) {
-      const t = newOrder[i]
+      const t = newOrder[i];
       await axios.patch(`${API_BASE}/personal-todos`, {
-        todoNum: t.todoNum, existingTodoDate: t.todoDate, pinOrderUpdate: i + 1
-      }, { params: { clientNum } })
+        todoNum: t.todoNum,
+        existingTodoDate: t.todoDate,
+        pinOrderUpdate: i + 1,
+      }, { params: { clientNum } });
     }
-    await fetchAllTodos()
+    await fetchAllTodos();
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }
 
 async function loadPinnedTodos() {
-  const { data } = await axios.get(`${API_BASE}/personal-todos/${clientNum}/pinned`)
+  const { data } = await axios.get(`${API_BASE}/personal-todos/${clientNum}/pinned`);
   pinnedTodos.value = data.map((item, i) => ({
     ...item,
     todoNum: item.todoNum,
     content: item.todoContent,
     todoDate: formatLocalDate(item.todoDate),
     pinOrder: item.pinOrder ?? i + 1,
-    categoryColor: item.personalCategoryColorRgb || '#ccc'
-  }))
+    categoryColor: item.personalCategoryColorRgb || '#ccc',
+  }));
 }
 
 async function handleTogglePin({ todoNum, todoDate }) {
   try {
     await axios.patch(`${API_BASE}/personal-todos`, {
       todoNum, existingTodoDate: todoDate, pinOrderUpdate: true
-    }, { params: { clientNum } })
-    await fetchAllTodos()
+    }, { params: { clientNum } });
+    await fetchAllTodos();
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }
 
 async function handleUnpinFromPinned(todo) {
   try {
+    const token = localStorage.getItem('accessToken');
     await axios.patch(`${API_BASE}/personal-todos`, {
-      todoNum: todo.todoNum, existingTodoDate: todo.todoDate, pinOrderUpdate: 0
-    }, { params: { clientNum } })
-    await fetchAllTodos()
+      todoNum: todo.todoNum, 
+      existingTodoDate: todo.todoDate, 
+      pinOrderUpdate: 0
+    }, { 
+      headers: { Authorization: `Bearer ${token}` },  // 헤더에 JWT 토큰 포함
+      params: { clientNum }
+    })
+    await fetchAllTodos();
   } catch (e) {
-    console.error(e)
+    console.error('[❌ handleUnpinFromPinned 오류]', e.response?.data);  // 서버에서 전달한 오류 메시지 출력
   }
 }
 
-const unpinnedTodos = computed(() => todosForDate.value)
+const unpinnedTodos = computed(() => todosForDate.value);
 </script>
-
-
-
 
 <style scoped>
 .container {

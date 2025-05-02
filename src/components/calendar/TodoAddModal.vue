@@ -68,9 +68,9 @@
         <div v-show="mode === 'REPEAT'" class="repeat-section">
           <div class="repeat-days">
             <label v-for="(day, index) in weekDays" :key="day">
-  <input type="checkbox" :value="index" v-model="repeatDays" />
-  <span>{{ day }}</span>
-</label>
+              <input type="checkbox" :value="index" v-model="repeatDays" />
+              <span>{{ day }}</span>
+            </label>
           </div>
           <div class="repeat-range">
             <label>시작일: <input type="date" v-model="repeatStart" /></label>
@@ -95,12 +95,14 @@ import axios from 'axios'
 const API_BASE = 'http://localhost:8080'
 const CLIENT_NUM = 6
 
+// Props & Emit 설정
 const props = defineProps({
   visible: { type: Boolean, required: true },
   defaultDate: { type: String, default: '' }
 })
 const emit = defineEmits(['add', 'close'])
 
+// Reactive Data
 const content = ref('')
 const personalCategoryNum = ref(null)
 const mode = ref('SINGLE')
@@ -137,6 +139,7 @@ const calendarDates = computed(() => {
   return dates
 })
 
+// Watchers
 watch(
   () => props.visible,
   async (open) => {
@@ -148,6 +151,7 @@ watch(
   { immediate: true }
 )
 
+// Methods
 async function loadCategories() {
   try {
     const { data } = await axios.get(`${API_BASE}/personal-categories/${CLIENT_NUM}`)
@@ -249,14 +253,15 @@ function resetForm() {
   flex-direction: column;
   gap: 16px;
 }
-.modal-content input{
+
+.modal-content input {
   width: 94%;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1rem;
-  gap: 5px;
 }
+
 .modal-content select {
   width: 100%;
   padding: 8px;
@@ -264,10 +269,12 @@ function resetForm() {
   border-radius: 8px;
   font-size: 1rem;
 }
+
 .mode-buttons {
   display: flex;
   gap: 8px;
 }
+
 .mode-buttons button {
   flex: 1;
   padding: 8px;
@@ -276,20 +283,25 @@ function resetForm() {
   background: #f8f8f8;
   cursor: pointer;
 }
+
 .mode-buttons button.active {
   background: #000;
   color: #fff;
 }
-.mode-button:hover{
+
+.mode-button:hover {
   background: #fff;
-  border: 1px solid #000 ;
+  border: 1px solid #000;
   color: #000;
 }
+
 .modal-actions {
   display: flex;
   gap: 8px;
 }
-.btn-cancel, .btn-confirm {
+
+.btn-cancel,
+.btn-confirm {
   flex: 1;
   padding: 10px;
   font-weight: bold;
@@ -297,14 +309,24 @@ function resetForm() {
   border-radius: 8px;
   cursor: pointer;
 }
-.btn-cancel { background: #eee;  border: 1px solid transparent;}
-.btn-confirm { background: #000; color: #fff; border:  1px solid transparent;}
-.btn-cancel:hover, .btn-confirm:hover {
-  background: #fff;
-  border: 1px solid #000 ;
-  color: #000;
+
+.btn-cancel {
+  background: #eee;
+  border: 1px solid transparent;
 }
 
+.btn-confirm {
+  background: #000;
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.btn-cancel:hover,
+.btn-confirm:hover {
+  background: #fff;
+  border: 1px solid #000;
+  color: #000;
+}
 
 .selected-dates {
   display: flex;
@@ -312,6 +334,7 @@ function resetForm() {
   gap: 8px;
   margin-top: 8px;
 }
+
 .tag {
   background: #eee;
   padding: 4px 8px;
@@ -320,12 +343,14 @@ function resetForm() {
   font-size: 0.9rem;
   user-select: none;
 }
+
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
   margin-top: 8px;
 }
+
 .calendar-date {
   padding: 6px;
   text-align: center;
@@ -333,25 +358,30 @@ function resetForm() {
   cursor: pointer;
   border: 1px solid #ccc;
 }
+
 .calendar-date.selected {
   background: #000;
   color: #fff;
   border-color: #000;
 }
+
 .month-select {
   margin-bottom: 8px;
 }
+
 .repeat-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+
 .repeat-days {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   justify-content: space-between;
 }
+
 .repeat-days label {
   display: inline-flex;
   align-items: center;
@@ -365,9 +395,9 @@ function resetForm() {
   font-size: 0.9rem;
   user-select: none;
   cursor: pointer;
-  user-select: none;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
+
 .repeat-days label:hover {
   background: #000;
   color: #fff;
@@ -377,11 +407,13 @@ function resetForm() {
 .repeat-days input[type="checkbox"] {
   display: none;
 }
+
 .repeat-days input[type="checkbox"]:checked + span {
   background: #000;
   color: #fff;
   border-color: #000;
 }
+
 .repeat-days label span {
   display: inline-block;
   width: 100%;
@@ -401,6 +433,7 @@ function resetForm() {
 .repeat-days input[type="checkbox"] {
   margin-right: 6px;
 }
+
 .repeat-range {
   display: flex;
   flex-direction: column; /* 이 줄이 핵심! */
@@ -409,7 +442,6 @@ function resetForm() {
   font-size: 15px;
   user-select: none;
 }
-
 
 .repeat-range label {
   flex: 1;
