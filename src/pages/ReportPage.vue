@@ -16,9 +16,14 @@
             </div>
             <div>
             <ReportBox
-                v-for="report in paginatedReports"
-                :key="report.id"
-                v-bind="report"/>
+            v-for="report in paginatedReports"
+            :key="report.reportNum"
+            :id="report.reportNum"
+            :type="report.reportType"
+            :date="report.reportTime"
+            :reporter="report.clientNickname"
+            :content="report.reportContent"
+            :status="report.reportStatus"/>
             </div>
         </div>
         <div class="pagenation">
@@ -32,6 +37,7 @@
   import AdminHeader from '@/components/header/AdminHeader.vue';
   import ReportBox from '@/components/report/ReportBox.vue';
   import Pagenation from '@/components/pagenation/Pagenation.vue';
+  import axios from '@/utils/axios'
 
   const reports = ref([]);
   const pageSize = 8;
@@ -51,13 +57,8 @@
 
   onMounted(async () => {
     try {
-      const res = await fetch('http://localhost:3001/reports');
+      const res = await fetch('http://localhost:8080/reports');
       let data = await res.json();
-      // id만 숫자로 변환해서 저장
-      data = data.map(report => ({
-        ...report,
-        id: Number(report.id)
-      }));
       reports.value = data;
     } catch (err) {
       console.error('데이터 로딩 실패:', err);
@@ -103,7 +104,7 @@
 
   .pagenation {
     position: absolute;   /* 또는 fixed */
-    top: 700px;
+    top: 900px;
     left: 50%;           
     transform: translateX(-50%);
   }

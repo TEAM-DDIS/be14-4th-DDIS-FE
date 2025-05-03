@@ -1,7 +1,7 @@
 <template>
     <div class="report-row">
       <div class="cell">{{ id }}</div>
-      <div class="cell">{{ type }}</div>
+      <div class="cell">{{ displayType }}</div>
       <div class="cell">{{ date }}</div>
       <div class="cell">{{ reporter }}</div>
       <div class="cell">{{ content }}</div>
@@ -9,14 +9,14 @@
       <div class="cell"></div>
       <div class="cell">
         <img
-          src="@/assets/icons/check-icon.svg"
+          src="../../assets/icons/check-icon.svg"
           alt="승인"
           class="icon clickable"
           :style="{ filter: checkColor, pointerEvents: isClicked ? 'none' : 'auto' }"
           @click="approve"
         />
         <img
-          src="@/assets/icons/reject-icon.svg"
+          src="../../assets/icons/reject-icon.svg"
           alt="비승인"
           class="icon clickable"
           :style="{ filter: rejectColor, pointerEvents: isClicked ? 'none' : 'auto' }"
@@ -27,7 +27,7 @@
   </template>
   
 <script setup>
-  import { ref } from 'vue';
+  import { ref, computed } from 'vue';
   
   const props = defineProps({
     id: Number,
@@ -35,7 +35,18 @@
     date: String,
     reporter: String,
     content: String,
-    status: String
+    status: Boolean
+  });
+
+  const displayType = computed(() => {
+    switch (props.type) {
+      case 'post':
+        return '게시글';
+      case 'client':
+        return '회원';
+      default:
+        return props.type;
+    }
   });
   
   const currentStatus = ref(props.status || '처리중');
@@ -43,18 +54,32 @@
   const rejectColor = ref('');
   const isClicked = ref(false);
   
-  function approve() {
+  async function approve() {
     if (isClicked.value) return;
-    currentStatus.value = '처리완료';
-    checkColor.value = 'invert(56%) sepia(92%) saturate(538%) hue-rotate(65deg) brightness(95%) contrast(90%)'; // 초록색
-    isClicked.value = true;
+    try {
+      await fetch(`http://localhost:8080/report/${props.id}/approve`, {
+        method: 'PATCH'
+      });
+      currentStatus.value = '처리완료';
+      checkColor.value = 'invert(56%) sepia(92%) saturate(538%) hue-rotate(65deg) brightness(95%) contrast(90%)';
+      isClicked.value = true;
+    } catch (error) {
+      console.error('승인 실패:', error);
+    }
   }
-  
-  function reject() {
+
+  async function reject() {
     if (isClicked.value) return;
-    currentStatus.value = '처리완료';
-    rejectColor.value = 'invert(19%) sepia(91%) saturate(7468%) hue-rotate(353deg) brightness(104%) contrast(116%)'; // 빨간색
-    isClicked.value = true;
+    try {
+      await fetch(`http://localhost:8080/report/${props.id}/reject`, {
+        method: 'PATCH'
+      });
+      currentStatus.value = '처리완료';
+      rejectColor.value = 'invert(19%) sepia(91%) saturate(7468%) hue-rotate(353deg) brightness(104%) contrast(116%)';
+      isClicked.value = true;
+    } catch (error) {
+      console.error('거절 실패:', error);
+    }
   }
 </script>
   

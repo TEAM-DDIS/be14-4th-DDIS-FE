@@ -59,7 +59,7 @@
     })
 
     onMounted(async () => {
-        const res = await fetch('http://localhost:3001/profile')
+        const res = await fetch('http://localhost:3001/profiles')
         const data = await res.json()
         profile.value = data
     })

@@ -29,45 +29,90 @@
           <button class="login-button" @click="handleLogin">로그인</button>
           <div class="login-links">
             <div class="left-login-links">
-              <a href="#">회원가입</a>
+              <a href="#" @click="goToSignup">회원가입</a>
             </div>
             <div class="right-login-links">
-              <a href="#">아이디찾기</a>
-              <a href="#">비밀번호찾기</a>
+              <a href="#" @click="goToFindId">아이디찾기</a>
+              <a href="#" @click="goToFindPassword">비밀번호찾기</a>
             </div>
           </div>
           <div class="social-login-label">간편 로그인</div>
         <div class="social-login">
-          <img src="@/assets/icons/google-icon.svg" alt="구글 로그인" class="social-icon" />
-          <img src="@/assets/icons/kakao-icon.svg" alt="카카오 로그인" class="social-icon" />
+          <img src="../assets/icons/google-icon.svg" alt="구글 로그인" class="social-icon" />
+          <img src="../assets/icons/kakao-icon.svg" alt="카카오 로그인" class="social-icon" />
         </div>
       </div>
     </div>
   </template>
   
-<script setup>
-  import { ref } from 'vue'
-  import LoginHeader from '@/components/header/LoginHeader.vue'
-  import visibleIcon from '@/assets/icons/visible-icon.svg'
-  import invisibleIcon from '@/assets/icons/invisible-icon.svg'
-
+  <script setup>
+  import { ref } from 'vue';
+  import { useRouter } from 'vue-router'; 
+  import { useAuthStore } from '@/stores/useAuthStore';
+  import LoginHeader from '@/components/header/LoginHeader.vue';
+  import visibleIcon from '@/assets/icons/visible-icon.svg';
+  import invisibleIcon from '@/assets/icons/invisible-icon.svg';
+  
+  const authStore = useAuthStore();
   const loginForm = ref({
     username: '',
     password: ''
-  })
-
-  const isPasswordVisible = ref(false)
-
+  });
+  
+  const isPasswordVisible = ref(false);
+  const router = useRouter(); // Vue Router 인스턴스 가져오기
+  
   function togglePassword() {
-    isPasswordVisible.value = !isPasswordVisible.value
+    isPasswordVisible.value = !isPasswordVisible.value;
   }
 
-  function handleLogin() {
-    console.log('아이디:', loginForm.value.username)
-    console.log('비밀번호:', loginForm.value.password)
-    // 여기에 로그인 API 연동 예정
+  function goToFindId() {
+  router.push('/login/find-Id');
+}
+
+function goToFindPassword() {
+  router.push('/login/ModifyPassword');
+}
+
+function goToSignup() {
+  router.push('/signup');
+}
+
+  
+  async function handleLogin() {
+    try {
+      const response = await fetch('http://localhost:8080/clients/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clientId: loginForm.value.username,
+          clientPwd: loginForm.value.password,
+        }),
+      });
+  
+      const result = await response.json();
+  
+      if (result.message === "로그인 성공") {
+        alert("로그인 성공!");
+        
+        //pinia에 토큰 저장
+        authStore.setTokens(result.accessToken, result.refreshToken);
+        authStore.loadTokens()
+  
+        // 라우팅 처리
+        router.push('/'); 
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("로그인 실패:", error);
+      alert("로그인 중 오류가 발생했습니다.");
+    }
   }
-</script>
+  </script>
+  
 
 <style scoped>
   .login-page {

@@ -24,10 +24,11 @@
   <script setup>
   import { ref, onMounted, reactive } from 'vue'
   import ShareRoomPage from '@/pages/ShareRoomPage.vue'
+  import axios from '@/utils/axios'
   
   const rooms = ref([])
   const selectedRoom = ref(null)
-  const clientNum = 8
+  const clientNum = 9
   
   onMounted(async () => {
     try {

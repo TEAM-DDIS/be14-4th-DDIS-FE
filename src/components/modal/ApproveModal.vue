@@ -5,8 +5,13 @@
 
       <!-- todo 선택 -->
       <select v-model="selectedTodoId" class="modal-select">
-        <option  v-for="todo in props.todoList" :key="todo.id" :value="todo.id">
-          {{ todo.text }}
+        <option disabled value="">-- 투두를 선택해주세요 --</option>
+        <option
+          v-for="todo in props.todoList"
+          :key="todo.memberShareTodoNum"
+          :value="todo.memberShareTodoNum"
+        >
+          {{ todo.shareTodoName }}
         </option>
       </select>
 
@@ -47,6 +52,18 @@ const props = defineProps({
   todoList: {
     type: Array,
     required: true
+  },
+  selectedDate: {
+    type: String,
+    required: true
+  },
+  memberNum: {
+    type: Number,
+    required: true
+  },
+  roomNum: {
+    type: Number,
+    required: true
   }
 })
 
@@ -54,20 +71,34 @@ const selectedTodoId = ref(null)
 const approveTitle = ref('')
 const approveContent = ref('')
 
-function submitApprove() {
+async function submitApprove() {
   if (!selectedTodoId.value || !approveTitle.value || !approveContent.value) {
     alert('모든 항목을 입력하세요.')
     return
   }
 
   const requestBody = {
+    memberNum: props.memberNum,
     memberShareTodoNum: selectedTodoId.value,
+    roomNum: props.roomNum,
+    todoDate: props.selectedDate,
     approveTitle: approveTitle.value,
     approveContent: approveContent.value,
     approveTime: new Date().toISOString()
   }
 
   console.log('보낼 데이터:', requestBody)
+  try {
+    await fetch('http://localhost:8080/approve/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    })
+    emit('close')
+  } catch (err) {
+    alert('등록 실패')
+    console.error(err)
+  }
 
   emit('close')  // ✅ 모달 닫기
 }
@@ -105,6 +136,10 @@ function closeModal() {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
+}
+
+.modal-textarea {
+  resize: none;
 }
 
 .modal-submit {

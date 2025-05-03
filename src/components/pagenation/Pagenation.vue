@@ -2,11 +2,11 @@
     <div class="pagination">
         <!-- 맨 처음 페이지 이동 -->
         <button class="arrow" @click="goFirst">
-        <img src="@/assets/icons/double-left-icon.svg" alt="맨 처음" />
+        <img src="../../assets/icons/double-left-icon.svg" alt="맨 처음" />
         </button>
         <!-- 이전 페이지 이동 -->
         <button class="arrow" @click="goPrev">
-        <img src="@/assets/icons/left-icon.svg" alt="이전" />
+        <img src="../../assets/icons/left-icon.svg" alt="이전" />
         </button>
         <!-- 페이지 번호들 -->
         <div class="page-numbers">
@@ -20,11 +20,11 @@
         </div>
         <!-- 다음 페이지 이동 -->
         <button class="arrow" @click="goNext">
-        <img src="@/assets/icons/right-icon.svg" alt="다음" />
+        <img src="../../assets/icons/right-icon.svg" alt="다음" />
         </button>
         <!-- 맨 마지막 페이지 이동 -->
         <button class="arrow" @click="goLast">
-        <img src="@/assets/icons/double-right-icon.svg" alt="맨 마지막" />
+        <img src="../../assets/icons/double-right-icon.svg" alt="맨 마지막" />
         </button>
     </div>
 </template>

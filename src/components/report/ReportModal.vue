@@ -33,13 +33,21 @@
 </template>
 
 <script setup>
-import { ref, defineEmits } from 'vue'
+import { ref, defineEmits, onMounted } from 'vue'
 
 const emit = defineEmits(['close'])
 
 const selected = ref('')
 const textareaValue = ref('')
+const clientNum = ref(null)
+const clientId = ref('')
 
+const props = defineProps({
+  reportType: String,       // 'client' 또는 'post'
+  reportTypeNum: Number     // 신고 대상 ID
+})
+
+// ✅ 라벨 및 고정된 신고 항목
 const options = [
   { label: '상업적/홍보성', value: '상업적/홍보성' },
   { label: '음란/선정성', value: '음란/선정성' },
@@ -49,15 +57,65 @@ const options = [
   { label: '기타', value: '기타' }
 ]
 
-function handleSubmit() {
-  console.log('✅ 선택된 항목:', selected.value)
-  if (selected.value === '기타') {
-    console.log('📝 입력한 내용:', textareaValue.value)
+// ✅ 토큰에서 clientNum 추출
+onMounted(() => {
+  const token = localStorage.getItem('accessToken')
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      clientNum.value = payload.sub // 문자열 그대로 저장
+      console.log('🔥 clientNum (토큰):', clientNum.value)
+    } catch (err) {
+      console.error('토큰 파싱 실패:', err)
+    }
   }
-  // 나중에 fetch/axios 연동 가능
-  emit('close')
+})
+
+// ✅ 신고 제출
+async function handleSubmit() {
+  if (!selected.value) {
+    alert('신고 사유를 선택해주세요.')
+    return
+  }
+
+  const reportContent =
+    selected.value === '기타' ? textareaValue.value.trim() : selected.value
+
+  if (!reportContent) {
+    alert('기타 사유를 입력해주세요.')
+    return
+  }
+
+  const payload = {
+    reportContent,
+    reportType: props.reportType,
+    clientId: clientNum.value,
+    reportTypeNum: props.reportTypeNum
+  }
+
+  try {
+    const res = await fetch('http://localhost:8080/report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!res.ok) throw new Error('요청 실패')
+
+    alert('신고가 접수되었습니다.')
+    emit('close')
+  } catch (err) {
+    console.error('신고 등록 실패:', err)
+    alert('신고 등록 중 오류가 발생했습니다.')
+  }
+  console.log('🟢 최종 payload:', payload)
+console.log('🔥 clientNum:', clientNum.value)
 }
 </script>
+
 
 <style scoped>
 .report-modal {
