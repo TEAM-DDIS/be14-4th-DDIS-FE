@@ -13,7 +13,6 @@
           <div class="circle" :style="{ backgroundColor: getColor(room.roomNum) }">
             {{ getInitial(room.title) }}
           </div>
-          <div class="story-name">{{ room.title }}</div>
         </div>
       </div>
   

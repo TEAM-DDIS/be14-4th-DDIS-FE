@@ -73,8 +73,8 @@ const newMessage = ref('')
 const selectedChat = ref(null)
 const messages = ref([])
 //const clientId = decoded.clientNum
-const clientId = Number(localStorage.getItem('clientId') || 11)
-const senderName = Number(localStorage.getItem('clientId') || 11)
+const auth = useAuthStore()
+const clientId = auth.clientId
 let stompClient = null
 let currentSubscription = null
 
