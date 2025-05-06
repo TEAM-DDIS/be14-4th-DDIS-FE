@@ -59,10 +59,14 @@ export const useAuthStore = defineStore('auth', {
     // ✅ 유저 프로필 불러오기
     async fetchUserProfile() {
       if (!this.accessToken) return
-
+    
       try {
         const res = await axios.get('/clients/mypage')
-        this.user = res.data
+        this.user = {
+          nickname: res.data.clientNickname,
+          email: res.data.clientEmail,
+          image: '', // 백엔드에서 이미지 URL 안 주는 중이면 기본값 처리
+        }
       } catch (err) {
         console.error('유저 정보 불러오기 실패', err)
       }
