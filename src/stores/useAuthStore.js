@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
 import axios from '@/utils/axios'
+import { jwtDecode } from 'jwt-decode'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: null,
     refreshToken: null,
+    clientId: null,
     user: {
       nickname: '',
       email: '',
@@ -13,41 +15,60 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
-    // 토큰 저장
+    // ✅ 토큰 저장 + clientId 디코딩
     setTokens(accessToken, refreshToken) {
       this.accessToken = accessToken
       this.refreshToken = refreshToken
       localStorage.setItem('accessToken', accessToken)
       localStorage.setItem('refreshToken', refreshToken)
+
+      try {
+        const decoded = jwtDecode(accessToken)
+        this.clientId = decoded.clientNum
+      } catch (err) {
+        console.error('JWT 디코딩 실패', err)
+        this.clientId = null
+      }
     },
 
-    // 토큰 제거
+    // ✅ 토큰 제거
     clearTokens() {
       this.accessToken = null
       this.refreshToken = null
+      this.clientId = null
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
     },
 
-    // 페이지 새로고침 시 토큰 불러오기
+    // ✅ 페이지 새로고침 시 토큰 & clientId 불러오기
     loadTokens() {
       this.accessToken = localStorage.getItem('accessToken')
       this.refreshToken = localStorage.getItem('refreshToken')
-    },
 
-    // 유저 프로필 불러오기
-    async fetchUserProfile() {
-        if (!this.accessToken) return;
-
+      if (this.accessToken) {
         try {
-          const res = await axios.get('/clients/mypage'); // 서버에서 토큰 파싱해 clientId 추출
-          this.user = res.data;
+          const decoded = jwtDecode(this.accessToken)
+          this.clientId = decoded.clientNum
         } catch (err) {
-          console.error('유저 정보 불러오기 실패', err);
+          console.error('JWT 디코딩 실패', err)
+          this.clientId = null
         }
+      }
     },
 
-    // 로그아웃 처리
+    // ✅ 유저 프로필 불러오기
+    async fetchUserProfile() {
+      if (!this.accessToken) return
+
+      try {
+        const res = await axios.get('/clients/mypage')
+        this.user = res.data
+      } catch (err) {
+        console.error('유저 정보 불러오기 실패', err)
+      }
+    },
+
+    // ✅ 로그아웃
     logout() {
       this.clearTokens()
       this.user = {
