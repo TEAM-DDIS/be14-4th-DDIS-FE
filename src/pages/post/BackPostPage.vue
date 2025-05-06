@@ -6,8 +6,22 @@
       <div class="left-section">
         <h1 class="board-title">모집 게시판</h1>
         <div class="category-tabs">
-          <button v-for="category in categories" :key="category" class="tab" :class="{ active: selectedCategory === category }" @click="selectedCategory = category">
-            {{ category }}
+          <button
+            class="tab"
+            :class="{ active: selectedCategory === '전체' }"
+            @click="selectedCategory = '전체'"
+          >
+            전체
+          </button>
+
+          <button
+            v-for="category in categories"
+            :key="category.categoryNum"
+            class="tab"
+            :class="{ active: selectedCategory === category.categoryName }"
+            @click="selectedCategory = category.categoryName"
+          >
+            {{ category.categoryName }}
           </button>
         </div>
       </div>
@@ -48,16 +62,15 @@
       @change="movePage"
     />
 
-    <button class="register-btn" @click="showModal = true">등록</button>
+    <button class="register-btn" @click="isModalOpen = true">등록</button>
 
-    <PostModal 
-      v-model="showModal" 
-      :categories="categories.filter(c => c !== '전체')"
-      @submit="handlePostSubmit"
-    />
+    <PostModal
+    v-model="isModalOpen"
+    :categories="categories"
+    @submit="handlePostSubmit"
+  />
   </div>
 </template>
-
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
@@ -67,14 +80,16 @@ import Pagenation from '@/components/pagenation/Pagenation.vue'
 
 const router = useRouter()
 const items = ref([])
-const showModal = ref(false)
+const isModalOpen = ref(false)
 const pageSize = 10
 const currentPage = ref(1)
-
-const categories = ['전체', '일상', '건강', '자기개발', '학습', '문화']
+const categories = ref([])
 const selectedCategory = ref('전체')
 const searchKeyword = ref('')
 const sortOption = ref('latest')
+const token = localStorage.getItem('accessToken');
+const payload = JSON.parse(atob(token.split('.')[1]));
+const clientId = payload.clientNum
 
 onMounted(async () => {
   try {
@@ -98,19 +113,27 @@ onMounted(async () => {
     }
 
     items.value = data.map(item => ({
-  id: item.postNum, // ✅ postNum → id로 할당
-  category: item.categoryName, // ✅ categoryName
-  title: item.postTitle, // ✅ postTitle
-  is_closed: item.isClosed ?? false,
-  startDate: item.recruitmentStartDate,
-  endDate: item.recruitmentEndDate,
-  status: item.isClosed ? '모집마감' : '모집중'
-}))
-  } catch (e) {
-    console.error('❌ 데이터 불러오기 실패:', e)
-    items.value = []
-  }
-})
+      id: item.postNum,
+      category: item.categoryName,
+      title: item.postTitle,
+      is_closed: item.isClosed ?? false,
+      startDate: item.recruitmentStartDate,
+      endDate: item.recruitmentEndDate,
+      status: item.isClosed ? '모집마감' : '모집중'
+    }))
+
+    // 🔥 카테고리 목록 가져오기
+    const categoryRes = await fetch('http://localhost:8080/categories') 
+    const categoryData = await categoryRes.json()
+    if (Array.isArray(categoryData)) {
+      categories.value = categoryData // categoryNum, categoryName 그대로 사용
+    }
+    } catch (e) {
+      console.error('❌ 데이터 불러오기 실패:', e)
+      items.value = []
+    }
+  })
+  
 
 const filteredItems = computed(() => {
   let list = [...items.value]
@@ -160,22 +183,22 @@ const handlePostSubmit = async (formData) => {
     console.log('Submitting form data:', formData);
 
     const requestData = {
-      categoryName: formData.category,
+      categoryNum: formData.category.categoryNum,
       postTitle: formData.title,
       postContent: formData.content,
       recruitmentStartDate: formData.recruitStartDate,
       recruitmentEndDate: formData.recruitEndDate,
       startDate: formData.participateStartDate,
       endDate: formData.participateEndDate,
-      limit: formData.maxParticipants,
-      isPrivate: formData.visibility === 'private',
-      password: formData.password || null,
-      writerNum: 1
+      recruitmentLimit: formData.maxParticipants,
+      isPublic: formData.visibility === 'public',
+      postPassword: formData.password || null,
+      clientNum: clientId
     }
 
     console.log('Sending request data:', requestData);
 
-    const res = await fetch('http://localhost:8080/post', {
+    const res = await fetch('http://localhost:8080/post/createPost', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -192,7 +215,7 @@ const handlePostSubmit = async (formData) => {
     console.log('Response data:', responseData);
     
     // 기존 목록에 새 게시글 추가
-    items.value = [{
+    items.value.unshift({
       id: responseData.post_num,
       category: responseData.category_name,
       title: responseData.post_title,
@@ -200,9 +223,9 @@ const handlePostSubmit = async (formData) => {
       startDate: responseData.recruitment_start_date,
       endDate: responseData.recruitment_end_date,
       status: '모집중'
-    }, ...items.value]
+    })
 
-    showModal.value = false
+    // showModal.value = false
     alert('게시글이 등록되었습니다.')
   } catch (e) {
     console.error('❌ 게시글 등록 실패:', e)

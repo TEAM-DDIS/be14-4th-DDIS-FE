@@ -8,6 +8,7 @@
           :key="f.followNum"
           :image="'/images/header-profile.png'"
           :nickname="f.clientNickname"
+          :client-num="f.followingNum"  
           />
         </div>
       </div>

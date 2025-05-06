@@ -4,11 +4,11 @@
         <h2 class="modal-title">팔로잉</h2>
         <div class="follower-list">
           <FollowBox
-          v-for="f in followings"
-          :key="f.followNum"
-          :image="'/images/header-profile.png'"
-          :nickname="f.clientNickname"
-          />
+  v-for="f in followings"
+  :key="f.followNum"
+  :image="'/images/header-profile.png'"
+  :nickname="f.clientNickname"
+  :client-num="f.followerNum"/>
         </div>
       </div>
     </div>
@@ -19,7 +19,8 @@
   import FollowBox from './FollowBox.vue';
   
   const followings = ref([]);
-  
+  console.log('🐛 followings:', followings.value)
+
   onMounted(async () => {
   const token = localStorage.getItem('accessToken');
   const payload = JSON.parse(atob(token.split('.')[1]));

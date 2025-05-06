@@ -1,62 +1,64 @@
 <template>
-  <div class="modal-overlay" @click.self="emit('close')">
-    <div class="modal-box">
-      <button class="close-btn" @click="emit('close')">×</button>
-      <div class="category-sidebar">
-        <div
-          v-for="category in categories"
-          :key="category.id"
-          :style="{
-            backgroundColor: category.colorRgba,
-            border: selectedCategoryId === category.id ? '2px solid #000' : '2px solid transparent'
-          }"
-          class="category-item"
-          @click="selectCategory(category)"
-        >
-          {{ category.name }}
-        </div>
-        <div class="category-add" @click="handleAddCategory">+</div>
-      </div>
-
-      <div class="category-content">
-        <h2>카테고리 설정</h2>
-
-        <div class="form-group">
-          <label>카테고리명</label>
-          <input v-model="categoryName" class="category-input" />
+  <transition name="fade">
+    <div v-if="visible" class="modal-overlay" @click.self="handleClose">
+      <div class="modal-box">
+        <button class="close-btn" @click="handleClose">×</button>
+        <div class="category-sidebar">
+          <div
+            v-for="category in categories"
+            :key="category.id"
+            :style="{
+              backgroundColor: category.colorRgba,
+              border: selectedCategoryId === category.id ? '2px solid #000' : '2px solid transparent'
+            }"
+            class="category-item"
+            @click="selectCategory(category)"
+          >
+            {{ category.name }}
+          </div>
+          <div class="category-add" @click="handleAddCategory">+</div>
         </div>
 
-        <div class="form-group">
-          <label>카테고리 색상</label>
-          <div class="color-palette">
-            <div
-              v-for="color in colorOptions"
-              :key="color.key"
-              class="color-circle"
-              :class="{ selected: selectedColorKey === color.key }"
-              :style="{ backgroundColor: color.rgba }"
-              @click="() => handleColorSelect(color)"
-            ></div>
+        <div class="category-content">
+          <h2>카테고리 설정</h2>
+
+          <div class="form-group">
+            <label>카테고리명</label>
+            <input v-model="categoryName" class="category-input" />
+          </div>
+
+          <div class="form-group">
+            <label>카테고리 색상</label>
+            <div class="color-palette">
+              <div
+                v-for="color in colorOptions"
+                :key="color.key"
+                class="color-circle"
+                :class="{ selected: selectedColorKey === color.key }"
+                :style="{ backgroundColor: color.rgba }"
+                @click="handleColorSelect(color)"
+              ></div>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button class="save-btn" @click="handleSave"> 저장 </button>
+            <button class="delete-btn" @click="confirmDelete"> 삭제 </button>
           </div>
         </div>
+      </div>
 
-        <div class="button-row">
-          <button class="save-btn" @click="handleSave"> 저장 </button>
-          <button class="delete-btn" @click="confirmDelete"> 삭제 </button>
+      <div v-if="showDeleteConfirm" class="confirm-box">
+        <p>정말 삭제하시겠습니까?</p>
+        <p class="sub">해당 카테고리에 속한 투두를 어떻게 처리할지 선택하세요.</p>
+        <div class="confirm-actions">
+          <button class="danger" @click="deleteCategory('delete')">전체 삭제</button>
+          <button @click="deleteCategory('detach')">투두 유지</button>
+          <button class="cancel" @click="showDeleteConfirm = false">취소</button>
         </div>
       </div>
     </div>
-
-    <div v-if="showDeleteConfirm" class="confirm-box">
-      <p>정말 삭제하시겠습니까?</p>
-      <p class="sub">해당 카테고리에 속한 투두를 어떻게 처리할지 선택하세요.</p>
-      <div class="confirm-actions">
-        <button class="danger" @click="deleteCategory('delete')">전체 삭제</button>
-        <button @click="deleteCategory('detach')">투두 유지</button>
-        <button class="cancel" @click="showDeleteConfirm = false">취소</button>
-      </div>
-    </div>
-  </div>
+  </transition>
 </template>
 
 <script setup>
@@ -65,15 +67,13 @@ import axios from '@/utils/axios'
 
 const emit = defineEmits(['close', 'refresh'])
 const clientNum = 6
-const confirm = () => emit('confirm')
-const cancel = () => emit('cancel')
-const categories = ref([])
-const selectedCategoryId = ref(null)
-const categoryName = ref('')
-const selectedColorKey = ref('TURQUOISE')
-const showDeleteConfirm = ref(false)
-// 바깥 클릭 방지용 빈 함수
-const preventClose = () => {}
+const categories = ref([]) // 카테고리 리스트
+const selectedCategoryId = ref(null) // 선택된 카테고리 ID
+const categoryName = ref('') // 입력된 카테고리 이름
+const selectedColorKey = ref('TURQUOISE') // 선택된 색상
+const showDeleteConfirm = ref(false) // 삭제 확인 창 여부
+
+// 색상 옵션
 const colorOptions = [
   { key: 'RED', rgba: 'rgba(255, 140, 154, 1)' },
   { key: 'ORANGE', rgba: 'rgba(255, 170, 140, 1)' },
@@ -84,8 +84,12 @@ const colorOptions = [
   { key: 'VIOLET', rgba: 'rgba(193, 132, 202, 1)' }
 ]
 
-onMounted(fetchCategories)
+// 카테고리 목록 가져오기
+onMounted(async () => {
+  await fetchCategories()
+})
 
+// 카테고리 목록 가져오기
 async function fetchCategories() {
   try {
     const { data } = await axios.get(`/personal-categories/${clientNum}`)
@@ -101,6 +105,7 @@ async function fetchCategories() {
   }
 }
 
+// 카테고리 선택
 function selectCategory(category) {
   selectedCategoryId.value = category.id
   categoryName.value = category.name
@@ -108,6 +113,7 @@ function selectCategory(category) {
   selectedColorKey.value = found ? found.key : 'TURQUOISE'
 }
 
+// 색상 선택
 function handleColorSelect(color) {
   selectedColorKey.value = color.key
   const selected = categories.value.find(cat => cat.id === selectedCategoryId.value)
@@ -116,6 +122,7 @@ function handleColorSelect(color) {
   }
 }
 
+// 카테고리 저장
 async function handleSave() {
   try {
     await axios.patch(
@@ -132,6 +139,7 @@ async function handleSave() {
   }
 }
 
+// 카테고리 추가
 async function handleAddCategory() {
   try {
     const baseName = '새 카테고리'
@@ -158,10 +166,12 @@ async function handleAddCategory() {
   }
 }
 
+// 삭제 확인 팝업
 function confirmDelete() {
   showDeleteConfirm.value = true
 }
 
+// 카테고리 삭제
 async function deleteCategory(action) {
   try {
     await axios.delete(`/personal-categories/${selectedCategoryId.value}`, {
@@ -182,9 +192,15 @@ async function deleteCategory(action) {
     alert('삭제 실패!')
   }
 }
+
+// 모달 닫기
+function handleClose() {
+  emit('close')
+}
 </script>
 
 <style scoped>
+/* 스타일 그대로 유지 */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -193,7 +209,6 @@ async function deleteCategory(action) {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-	
 }
 
 .modal-box {
@@ -217,7 +232,7 @@ async function deleteCategory(action) {
 }
 
 .category-sidebar {
-	padding-top: 10px;
+  padding-top: 10px;
   min-width: 160px;
   background: #f1f1f1;
   padding: 12px;
@@ -382,8 +397,9 @@ async function deleteCategory(action) {
   background: #ccc;
   color: #000;
 }
+
 .category-sidebar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+  display: none;
 }
 
 .sub {

@@ -42,7 +42,7 @@
             type="button"
             @click="sendVerificationCode"
             :disabled="isCodeSent"
-            style="background-color: #4dd0e1; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer;"
+            class="send-code-btn"
         >
             인증번호 받기
         </button>
@@ -50,13 +50,14 @@
             {{ Math.floor(timer / 60) }}:{{ (timer % 60).toString().padStart(2, '0') }}
         </span>
         </div>
-        <input v-model="form.code" type="text" placeholder="인증번호를 입력하세요." />
-        <p v-if="errors.code" class="error">{{ errors.code }}</p>
+        <div class="verify">
+          <input v-model="form.code" type="text" placeholder="인증번호를 입력하세요." />
+          <p v-if="errors.code" class="error">{{ errors.code }}</p>
 
-        <button type="button" @click="verifyCode" class="verify-code-btn">
-        인증번호 확인
-        </button>
-  
+          <button type="button" @click="verifyCode" class="verify-code-btn">
+          인증번호 확인
+          </button>      
+        </div>
         <button type="submit" class="submit-btn">가입하기</button>
       </form>
     </div>
@@ -259,7 +260,7 @@
   
   <style scoped>
   .register-container {
-    max-width: 400px;
+    max-width: 600px;
     margin: 40px auto;
     margin-top: 150px;
     padding: 0 20px;
@@ -267,15 +268,15 @@
   
   .title {
     text-align: center;
-    margin-bottom: 20px;
-    font-size: 24px;
+    margin-bottom: 50px;
+    font-size: 30px;
   }
   
   .form input {
     display: block;
     width: 100%;
     padding: 10px;
-    margin-bottom: 5px;
+    margin-bottom: 25px;
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -284,14 +285,14 @@
   .success {
   color: #00aa00;
   font-size: 12px;
-  margin-top: -5px;
+  margin-top: -20px;
   margin-bottom: 10px;
   }
 
   .error {
   color: red;
   font-size: 12px;
-  margin-top: -5px;
+  margin-top: -20px;
   margin-bottom: 10px;
   }
   
@@ -314,14 +315,17 @@
   }
   
   .send-code-btn {
-    padding: 10px 14px;
-    background-color: #58d3c8;
+    padding: 8px 10px;
+    background: #000000;
     color: white;
     white-space: nowrap;
     border: none;
-    border-radius: 5px;
-    height: 40px;
+    border-radius: 12px;
+    font-weight: bold;
+    width: 110px;
+    height: 36px;
     line-height: 20px;
+    margin-bottom: 23px;
     cursor: pointer;
   }
   
@@ -332,17 +336,38 @@
     font-weight: bold;
     padding: 12px;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
+    margin-top: 50px;
+    margin-bottom: 80px;
+    align-items: center;
     cursor: pointer;
   }
 
-  .verify-code-btn {
-  background-color: #4caf50;
-  color: white;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  margin-top: 8px;
-  cursor: pointer;
+  .verify {
+    /* display: flex;
+    justify-content: space-between;
+    align-items: center; */
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  ::v-deep(.verify-code-btn) {
+    /* display: flex-end; */
+    background-color: white;
+    color: #ff6f6f;
+    white-space: nowrap;
+    padding: 8px 10px;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    width: 130px;
+    height: 36px;
+    font-weight: bold;
+    
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
   }
   </style>

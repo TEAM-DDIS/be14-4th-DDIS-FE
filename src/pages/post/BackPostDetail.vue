@@ -14,36 +14,36 @@
             </div>
           </div>
 
-        <!-- Status Grid -->
-        <div class="status-grid">
-          <div class="status-item">
-            <h3>참여 기간</h3>
-            <p>{{ formatDateRange(todoData.startDate, todoData.endDate) }}</p>
-          </div>
-          <div class="status-item">
-            <h3>모집 기간</h3>
-            <p>{{ formatDateRange(todoData.recruitStartDate, todoData.recruitEndDate) }}</p>
-          </div>
-          <div class="status-item">
-            <h3>참여 현황</h3>
-            <p>
-              <span class="highlight">{{ todoData.applicants }}</span> /
-              <span>{{ todoData.limit }}명</span>
-            </p>
-          </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-          <section class="content-section">
-            <h2>TO-DO 내용</h2>
-            <div class="content-box">
-              <div class="content-text">
-                {{ todoData.content }}
-              </div>
+          <!-- Status Grid -->
+          <div class="status-grid">
+            <div class="status-item">
+              <h3>참여 기간</h3>
+              <p>{{ formatDateRange(todoData.startDate, todoData.endDate) }}</p>
             </div>
-          </section>
-        </div>
+            <div class="status-item">
+              <h3>모집 기간</h3>
+              <p>{{ formatDateRange(todoData.recruitStartDate, todoData.recruitEndDate) }}</p>
+            </div>
+            <div class="status-item">
+              <h3>참여 현황</h3>
+              <p>
+                <span class="highlight">{{ todoData.applicants }}</span> /
+                <span>{{ todoData.limit }}명</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Main Content -->
+          <div class="main-content">
+            <section class="content-section">
+              <h2>TO-DO 내용</h2>
+              <div class="content-box">
+                <div class="content-text">
+                  {{ todoData.content }}
+                </div>
+              </div>
+            </section>
+          </div>
 
           <!-- Action Buttons -->
           <div class="action-buttons">
@@ -85,6 +85,13 @@
         :reportTypeNum="modalReportTypeNum"
         @close="showModal = false"
       />
+
+      <!-- Post Modal -->
+      <PostModal
+        v-model="isPostModalOpen"
+        :categories="categories"
+        @submit="handlePostSubmit"
+      />
     </div>
   </div>
 </template>
@@ -94,66 +101,49 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import TodoEditModal from '@/components/post/TodoEditModal.vue'
 import ReportModal from '@/components/report/ReportModal.vue'
+import PostModal from '@/components/post/PostModal.vue'
 
 const router = useRouter()
 const route = useRoute()
 const showEditModal = ref(false)
 const showModal = ref(false)
+const isPostModalOpen = ref(false)
 const modalReportType = ref('')
 const modalReportTypeNum = ref(0)
 const todoData = ref(null)
-const currentUserId = 1
 const searchKeyword = ref('')
 const sortOption = ref('latest')
+const categories = ref([]) // 필요에 따라 카테고리 추가
+const token = localStorage.getItem('accessToken');
+const payload = JSON.parse(atob(token.split('.')[1]));
+const clientId = payload.clientNum
 
-// 게시글 데이터 로드
 onMounted(async () => {
   try {
     const postNum = route.params.id
-    console.log('🔎 요청할 postNum:', postNum)
-
     const res = await fetch(`http://localhost:8080/post/${postNum}`)
     if (!res.ok) throw new Error('게시글을 불러오는 데 실패했습니다.')
 
     const data = await res.json()
-    console.log('📦 백엔드 응답 data:', data)
-
-    // 날짜 확인용 로그 (raw)
-    console.log('📆 원본 createdDate:', data.createdDate)
-    console.log('📆 원본 startDate:', data.startDate)
-    console.log('📆 원본 endDate:', data.endDate)
-    console.log('📆 원본 recruitStartDate:', data.recruitStartDate)
-    console.log('📆 원본 recruitEndDate:', data.recruitEndDate)
-
-    // 날짜를 ISO 문자열로 변환
     data.createdDate = data.createdDate ? new Date(data.createdDate).toISOString() : null
     data.startDate = data.startDate ? new Date(data.startDate).toISOString() : null
     data.endDate = data.endDate ? new Date(data.endDate).toISOString() : null
     data.recruitStartDate = data.recruitStartDate ? new Date(data.recruitStartDate).toISOString() : null
     data.recruitEndDate = data.recruitEndDate ? new Date(data.recruitEndDate).toISOString() : null
 
-    // 변환된 결과 확인
-    console.log('✅ 변환된 날짜 데이터:', {
-      createdDate: data.createdDate,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      recruitStartDate: data.recruitStartDate,
-      recruitEndDate: data.recruitEndDate,
-    })
+     // ✅ 테스트용 작성자 ID 강제 주입
+    //  data.authorId = 1 // 👈 여기만 추가하면 끝!
 
     todoData.value = data
-    console.log('✅ 최종 todoData:', todoData.value)
   } catch (e) {
     console.error('❌ 게시글 로딩 실패:', e)
     alert('해당 게시글을 찾을 수 없습니다.')
-    router.push('/posts')
+    router.push('/post')
   }
 })
 
-// 작성자 여부 확인
-const isAuthor = computed(() => todoData.value?.authorId === currentUserId)
+const isAuthor = computed(() => todoData.value?.authorId === clientId)
 
-// 날짜 형식 변환
 const formatDate = (date) => {
   if (!date) return '날짜 없음'
   return new Date(date).toLocaleDateString('ko-KR', {
@@ -163,10 +153,8 @@ const formatDate = (date) => {
   })
 }
 
-// 날짜 범위 형식 변환
 const formatDateRange = (start, end) => {
   if (!start || !end) return '기간 없음'
-  
   const formatSimpleDate = (date) => {
     return new Date(date).toLocaleDateString('ko-KR', {
       month: 'long',
@@ -176,18 +164,31 @@ const formatDateRange = (start, end) => {
   return `${formatSimpleDate(start)} ~ ${formatSimpleDate(end)}`
 }
 
-const goToList = () => {
-  router.push('/posts')
-}
+const goToList = () => router.push('/post')
+const handleEdit = () => { showEditModal.value = true }
 
-const handleEdit = () => {
-  showEditModal.value = true
-}
+const handleEditSubmit = async (data) => {
+  try {
+    const postNum = route.params.id
+    const res = await fetch(`http://localhost:8080/post/${postNum}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: data.title,
+        content: data.content
+      })
+    })
+    if (!res.ok) throw new Error('수정 실패')
 
-const handleEditSubmit = (data) => {
-  todoData.value.title = data.title
-  todoData.value.content = data.content
-  showEditModal.value = false
+    // 로컬 상태도 반영
+    todoData.value.title = data.title
+    todoData.value.content = data.content
+    alert('수정이 완료되었습니다.')
+    showEditModal.value = false
+  } catch (err) {
+    console.error('❌ 수정 실패:', err)
+    alert('수정에 실패했습니다.')
+  }
 }
 
 const handleDelete = async () => {
@@ -195,21 +196,14 @@ const handleDelete = async () => {
     try {
       const postNum = route.params.id
       const deleteDate = new Date().toISOString()
-
       const res = await fetch(`http://localhost:8080/post/${postNum}/soft-delete`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          deleteDate
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deleteDate })
       })
-
       if (!res.ok) throw new Error('삭제 실패')
-
       alert('게시글이 삭제되었습니다.')
-      router.push('/posts')
+      router.push('/post')
     } catch (e) {
       console.error('❌ 삭제 실패:', e)
       alert('삭제에 실패했습니다.')
@@ -220,17 +214,11 @@ const handleDelete = async () => {
 const handleApply = async () => {
   try {
     const postNum = route.params.id
-    // 신청 API 호출
-    const res = await fetch(`http://localhost:8080/applicants/${postNum}?clientNum=${currentUserId}`, {
+    const res = await fetch(`http://localhost:8080/applicants/${postNum}?clientNum=${clientId}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' }
     })
-    
     if (!res.ok) throw new Error('신청 실패')
-    
-    // 신청 성공 시 참여자 수 증가
     if (todoData.value) {
       todoData.value.applicants = (todoData.value.applicants || 0) + 1
     }
@@ -244,23 +232,14 @@ const handleApply = async () => {
 const handleCreateRoom = async () => {
   try {
     const postNum = route.params.id
-
     const res = await fetch('http://localhost:8080/room', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        postNum,
-        clientNum: currentUserId
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postNum, clientNum: clientId })
     })
-
     if (!res.ok) throw new Error('공동방 생성 실패')
-
     const data = await res.json()
     alert('공동방이 생성되었습니다.')
-    // TODO: 생성된 공동방으로 이동
     console.log('Created room data:', data)
   } catch (e) {
     console.error('❌ 공동방 생성 실패:', e)
@@ -272,6 +251,36 @@ const handleReport = () => {
   modalReportType.value = 'post'
   modalReportTypeNum.value = Number(route.params.id)
   showModal.value = true
+}
+
+const handlePostSubmit = async (formData) => {
+  try {
+    const requestData = {
+      categoryNum: formData.category.categoryNum,
+      postTitle: formData.title,
+      postContent: formData.content,
+      recruitmentStartDate: formData.recruitStartDate,
+      recruitmentEndDate: formData.recruitEndDate,
+      startDate: formData.participateStartDate,
+      activitytime: 7,
+      endDate: formData.participateEndDate,
+      recruitmentLimit: formData.maxParticipants,
+      isPublic: formData.visibility === 'private',
+      postPassword: formData.password || null,
+      clientNum: clientId
+    }
+    const res = await fetch('http://localhost:8080/post/createPost', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData)
+    })
+    if (!res.ok) throw new Error('등록 실패')
+    isPostModalOpen.value = false
+    alert('게시글이 등록되었습니다!')
+  } catch (err) {
+    console.error('게시글 등록 실패:', err)
+    alert('게시글 등록에 실패했습니다.')
+  }
 }
 </script>
 

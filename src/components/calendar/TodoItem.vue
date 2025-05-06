@@ -28,7 +28,9 @@
       </div>
 
       <div class="right-content" :style="{ borderColor: todo.categoryColor }">
-        <span class="todo-content">{{ todo.content }}</span>
+        <span class="todo-content">
+          {{ todo.content || todo.todoContent || '(내용 없음)' }}
+        </span>
         <div class="right-buttons">
           <div
             class="status-circle"
@@ -45,43 +47,82 @@
 
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
 
 const props = defineProps({ todo: Object })
 const emit = defineEmits(['update-pin', 'toggle-done', 'delete', 'toggle-public'])
-
+const token = localStorage.getItem('accessToken');
+const payload = JSON.parse(atob(token.split('.')[1]));
+const clientId = payload.clientNum;
 const hovered = ref(false)
 const swiped = ref(false)
 const startX = ref(null)
 const SWIPE_THRESHOLD = 30
 
+const API_BASE = 'http://localhost:8080'  // API 베이스 주소 설정
+
+const lockIcons = {
+  public: new URL('@/assets/icons/todo-global.svg', import.meta.url).href,
+  private: new URL('@/assets/icons/todo-lock.svg', import.meta.url).href
+}
+
 function toggleDone() {
-  emit('toggle-done', {
+  const payload = {
     todoNum: props.todo.todoNum,
     todoDate: props.todo.todoDate,
     isDone: !props.todo.isDone
-  })
+  }
+  axios.patch(`${API_BASE}/personal-todos/${clientNum}`, payload, {headers: { Authorization: `Bearer ${token}` }})
+    .then(() => {
+      emit('toggle-done', payload) // 상태 변경 후 이벤트 전달
+    })
+    .catch((e) => {
+      console.error('[❌ toggleDone 에러]', e)
+    })
 }
 
 function togglePin() {
-  emit('update-pin', {
+  const payload = {
     todoNum: props.todo.todoNum,
-    todoDate: props.todo.todoDate
-  })
+    existingTodoDate: props.todo.todoDate,
+    pinOrderUpdate: true
+  }
+  axios.patch(`${API_BASE}/personal-todos`, payload, {headers: { Authorization: `Bearer ${token}` }})
+    .then(() => {
+      emit('update-pin', payload) // 상태 변경 후 이벤트 전달
+    })
+    .catch((e) => {
+      console.error('[❌ togglePin 에러]', e)
+    })
 }
 
 function deleteTodo() {
-  emit('delete', {
+  const payload = {
     todoNum: props.todo.todoNum,
     todoDate: props.todo.todoDate
-  })
+  }
+  axios.delete(`${API_BASE}/personal-todos/${props.todo.todoNum}`, { data: payload })
+    .then(() => {
+      emit('delete', payload) // 상태 변경 후 이벤트 전달
+    })
+    .catch((e) => {
+      console.error('[❌ deleteTodo 에러]', e)
+    })
 }
 
 function togglePublic() {
-  emit('toggle-public', {
+  const payload = {
     todoNum: props.todo.todoNum,
     todoDate: props.todo.todoDate,
     isPublic: !props.todo.isPublic
-  })
+  }
+  axios.patch(`${API_BASE}/personal-todos/${props.todo.todoNum}/public`, payload)
+    .then(() => {
+      emit('toggle-public', payload) // 상태 변경 후 이벤트 전달
+    })
+    .catch((e) => {
+      console.error('[❌ togglePublic 에러]', e)
+    })
 }
 
 function startSwipe(e) {
@@ -101,11 +142,6 @@ function endSwipe() {
 function cancelSwipe() {
   startX.value = null
   swiped.value = false
-}
-
-const lockIcons = {
-  public: new URL('@/assets/icons/todo-global.svg', import.meta.url).href,
-  private: new URL('@/assets/icons/todo-lock.svg', import.meta.url).href
 }
 </script>
 

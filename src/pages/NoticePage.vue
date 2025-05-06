@@ -69,6 +69,15 @@
             const res = await axios.get('http://localhost:3001/notices')
             // 최신순으로 정렬 (id 기준)
             notices.value = res.data.sort((a, b) => b.id - a.id)
+            
+            // const res = await fetch('http://localhost:8080/notices/all')
+            // let data = await res.json();
+            //  // 날짜 최신순 정렬 (백엔드에서 date 필드 기준 정렬 필요시)
+            //  console.log('받아온 공지사항:', data) // ✅ 로그 확인
+            // data.sort((a, b) => new Date(b.date) - new Date(a.date))
+            
+            notices.value = data;
+
         } catch (err) {
             console.error('공지사항 불러오기 실패:', err)
         }
@@ -92,6 +101,7 @@
     function nextPage() {
         if (currentPage.value < totalPages.value) currentPage.value++
     }
+    
 </script>
   
 <style scoped>

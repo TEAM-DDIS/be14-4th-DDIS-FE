@@ -106,8 +106,38 @@
         showProfileModal.value = false
     }
 
+    function transformMenus(originalMenus) {
+        return originalMenus.map(menu => {
+            const newMenu = { ...menu }
+            if (Array.isArray(menu.children)) {
+            newMenu.children = menu.children.map(child => {
+                if (typeof child === 'string') {
+                return {
+                    label: child,
+                    href: generateHref(child),
+                }
+                }
+                return child
+            })
+            }
+            return newMenu
+        })
+    }
+
+    // 🛠 label을 href로 변환해주는 함수 (매핑 테이블 기반)
+    function generateHref(label) {
+        const mapping = {
+            '공지사항': '/notice',
+            '문의사항': '/inquiry',
+            '공동 Todo': '/todo/shared',
+            '개인 Todo': '/todo/personal',
+            '모집 게시판': '/post',
+        }
+        return mapping[label] || '/' + label.toLowerCase()
+    }
+
     const activeMenu = ref(null)
-    const menus = [
+    const rawMenus = [
     {
         key: 'board',
         label: '게시판',
@@ -127,6 +157,9 @@
         children: ['공지사항', '문의사항'],
     },
     ]
+
+    const menus = transformMenus(rawMenus)
+
 
     function activate(key) {
         activeMenu.value = key

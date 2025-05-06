@@ -28,7 +28,9 @@
   
   const rooms = ref([])
   const selectedRoom = ref(null)
-  const clientNum = 9
+  const token = localStorage.getItem('accessToken');
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  const clientNum = payload.clientNum
   
   onMounted(async () => {
     try {

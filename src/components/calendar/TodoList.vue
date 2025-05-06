@@ -16,10 +16,10 @@
           :key="todo.todoNum"
           :todo="todo"
           :categoryColor="group.color"
-        @update-pin="handleUpdatePin"
-        @toggle-done="handleToggleDone"
-        @toggle-public="handleTogglePublic"
-        @delete="handleDeleteTodo"
+          @update-pin="handleUpdatePin"
+          @toggle-done="handleToggleDone"
+          @toggle-public="handleTogglePublic"
+          @delete="handleDeleteTodo"
         />
       </div>
     </div>
@@ -29,12 +29,16 @@
 <script setup>
 import { computed } from 'vue'
 import TodoItem from './TodoItem.vue'
+import axios from 'axios'
 
 const props = defineProps({
   todos: Array
 })
 const emit = defineEmits(['update-pin', 'toggle-done', 'toggle-public', 'delete'])
 
+const API_BASE = 'http://localhost:8080'  // API Base 설정
+
+// 데이터를 카테고리별로 그룹화
 const groupedTodos = computed(() => {
   const groups = {}
   props.todos.forEach(todo => {
@@ -49,21 +53,52 @@ const groupedTodos = computed(() => {
   })
   return groups
 })
+
 console.log('✅ todos:', props.todos)
 
+// 투두 항목을 핀 처리
 function handleUpdatePin(payload) {
   emit('update-pin', payload)
-}
-function handleToggleDone(payload) {
-  emit('toggle-done', payload)
-}
-function handleTogglePublic(payload) {
-  emit('toggle-public', payload)
-}
-function handleDeleteTodo(payload) {
-  emit('delete', payload)
+  updateTodoOnServer(payload)
 }
 
+// 완료 처리 상태 변경
+function handleToggleDone(payload) {
+  emit('toggle-done', payload)
+  updateTodoOnServer(payload)
+}
+
+// 공개/비공개 상태 변경
+function handleTogglePublic(payload) {
+  emit('toggle-public', payload)
+  updateTodoOnServer(payload)
+}
+
+// 투두 삭제
+function handleDeleteTodo(payload) {
+  emit('delete', payload)
+  deleteTodoFromServer(payload)
+}
+
+// 투두 데이터 서버와 동기화: 핀 처리, 완료 상태, 공개 상태
+async function updateTodoOnServer(payload) {
+  try {
+    await axios.patch(`${API_BASE}/personal-todos/${payload.todoNum}`, payload)
+  } catch (error) {
+    console.error('Error updating todo:', error)
+  }
+}
+
+// 투두 삭제 서버 연동
+async function deleteTodoFromServer(payload) {
+  try {
+    await axios.delete(`${API_BASE}/personal-todos/${payload.todoNum}`, {
+      data: payload
+    })
+  } catch (error) {
+    console.error('Error deleting todo:', error)
+  }
+}
 </script>
 
 <style scoped>

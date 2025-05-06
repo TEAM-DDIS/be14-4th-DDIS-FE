@@ -4,6 +4,10 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         {
+            path: '/',
+            component: () => import('@/pages/MainPage.vue')
+        },
+        {
             path: '/todo/personal',
             component: () => import('@/pages/PersonalTodoPage.vue')
         },
@@ -21,7 +25,7 @@ const router = createRouter({
         },
     
         {
-            path: '/sharetodopage',
+            path: '/todo/shared',
             component: () => import('@/pages/ShareRoomPage.vue')
         },
         {
@@ -72,7 +76,13 @@ const router = createRouter({
         {
             path: '/post/:id',
             component: () => import('@/pages/post/BackPostDetail.vue')
+        },
+        {
+            path: '/personal-page/:clientNum',
+            name: 'OtherUserPage',
+            component: () => import('@/pages/OtherUserPage.vue')
         }
+
     ]
 })
 

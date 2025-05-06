@@ -1,15 +1,26 @@
 <template>
-    <div class="follow-box">
+    <div class="follow-box" @click="goToProfile">
       <img :src="image" alt="프로필 이미지" class="profile-img" />
       <span class="nickname">{{ nickname }}</span>
     </div>
   </template>
   
   <script setup>
-  defineProps({
+  import { useRouter } from 'vue-router'
+  const props = defineProps({
     image: String,
-    nickname: String
-  });
+    nickname: String,
+    clientId: String,
+    clientNum: {
+    type: Number,
+    required: true
+  }  })
+  const router = useRouter()
+  function goToProfile() {
+    console.log('➡️ 이동할 clientNum:', props)
+
+    router.push(`/personal-page/${props.clientNum}`)
+  }
   </script>
   
   <style scoped>
